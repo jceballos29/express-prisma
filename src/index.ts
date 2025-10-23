@@ -1,12 +1,8 @@
 import http from 'http';
 import { config } from './config';
 import { connectDatabase, disconnectDatabase, prisma } from './config/database';
-import { connectRedis, disconnectRedis, getRedisClient, createCacheHelper } from './config/redis';
+import { connectRedis, disconnectRedis, getRedisClient } from './config/redis';
 import { createApp } from './app';
-
-// Crear aplicación
-const app = createApp();
-const server: http.Server = http.createServer(app);
 
 // Función para iniciar el servidor
 async function startServer() {
@@ -20,6 +16,11 @@ async function startServer() {
     // 2. Conectar a Redis
     console.log('\n💾 Connecting to Redis...');
     await connectRedis();
+
+    console.log('\n🔄 Initializing application...');
+    const app = createApp();
+    const server: http.Server = http.createServer(app);
+
 
     // 3. Iniciar servidor HTTP
     server.listen(config.server.port, () => {
@@ -90,4 +91,4 @@ process.on('unhandledRejection', (reason, promise) => {
 startServer();
 
 // Exportar para testing
-export { app, prisma, getRedisClient, createCacheHelper };
+export { prisma, getRedisClient };

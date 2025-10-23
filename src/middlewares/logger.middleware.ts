@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { loggerHelpers } from '../utils/logger';
+import { loggerHelpers } from '../shared/utils';
 
 // Middleware para loggear todas las requests
 export function requestLogger(req: Request, res: Response, next: NextFunction) {

@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { getRedisClient } from '../config/redis';
 import { config } from '../config';
-import logger from '../utils/logger';
+import { logger } from '../shared/utils';
 import { Request, Response } from 'express';
 
 // Rate limiter básico (en memoria)
@@ -35,14 +35,14 @@ export const redisRateLimiter = rateLimit({
   max: config.rateLimit.max,
   standardHeaders: true,
   legacyHeaders: false,
-  
+
   // Usar Redis como store
   store: new RedisStore({
     // @ts-expect-error - RedisStore espera un cliente legacy
     client: getRedisClient(),
     prefix: 'rate_limit:',
   }),
-  
+
   handler: (req: Request, res: Response) => {
     logger.warn({
       ip: req.ip,
@@ -143,7 +143,7 @@ export class RedisRateLimiter {
 
       if (count >= this.max) {
         const ttl = await redis.ttl(key);
-        
+
         logger.warn({
           identifier,
           path: req.path,

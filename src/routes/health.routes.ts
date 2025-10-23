@@ -6,7 +6,7 @@ import { config } from '../config';
 const router = Router();
 
 // Health check básico
-router.get('/', (req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -15,7 +15,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Health check detallado
-router.get('/detailed', async (req: Request, res: Response) => {
+router.get('/detailed', async (_req: Request, res: Response) => {
   const startTime = Date.now();
 
   try {
@@ -64,7 +64,7 @@ router.get('/detailed', async (req: Request, res: Response) => {
 });
 
 // Readiness probe (para Kubernetes)
-router.get('/ready', async (req: Request, res: Response) => {
+router.get('/ready', async (_req: Request, res: Response) => {
   try {
     const [databaseHealthy, redisHealthy] = await Promise.all([
       checkDatabaseHealth(),
@@ -82,7 +82,7 @@ router.get('/ready', async (req: Request, res: Response) => {
 });
 
 // Liveness probe (para Kubernetes)
-router.get('/live', (req: Request, res: Response) => {
+router.get('/live', (_req: Request, res: Response) => {
   res.status(200).json({ alive: true });
 });
 

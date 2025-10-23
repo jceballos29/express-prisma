@@ -1,9 +1,9 @@
 import pino from 'pino';
-import { config } from '../config';
+import { config } from '../../config';
 import { Request, Response } from 'express';
 
 // Configuración de Pino
-const logger = pino({
+export const logger = pino({
   level: config.logging.level,
   
   // Pretty print en desarrollo
@@ -141,4 +141,4 @@ export const createModuleLogger = (module: string) => {
   return logger.child({ module });
 };
 
-export default logger;
+// export default logger;

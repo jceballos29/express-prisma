@@ -1,2 +1,2 @@
 export { default as health } from './health.routes';
-export { default as users } from './users.routes';
+export { default as welcome } from './welcome.routes';

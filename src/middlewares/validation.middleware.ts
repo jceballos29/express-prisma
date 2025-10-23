@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodObject } from 'zod';
-import logger from '../utils/logger';
+import { logger } from '../shared/utils';
 
 
 // Tipo para especificar dónde validar
@@ -49,7 +49,7 @@ export function validate(schema: ZodObject, source: ValidationSource = 'body') {
       }
 
       logger.error({ err: error }, 'Unexpected validation error');
-      
+
       return res.status(500).json({
         error: 'Internal server error during validation',
       });
@@ -132,7 +132,7 @@ export function validateMultiple(schemas: {
       next();
     } catch (error) {
       logger.error({ err: error }, 'Unexpected validation error');
-      
+
       return res.status(500).json({
         error: 'Internal server error during validation',
       });

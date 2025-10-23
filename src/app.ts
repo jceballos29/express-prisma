@@ -1,12 +1,14 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
-import morgan from 'morgan';
 import cors from 'cors';
-import { config } from './config';
+import express, { Application } from 'express';
 import helmet from 'helmet';
-import { health, users } from './routes';
-import { requestLogger, requestId } from './middlewares/logger.middleware';
+import morgan from 'morgan';
+import { config } from './config';
+import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import { requestId, requestLogger } from './middlewares/logger.middleware';
 import { rateLimiter } from './middlewares/rateLimit.middleware';
-import logger from './utils/logger';
+import { auth } from './modules/auth';
+import { users } from './modules/users';
+import { health, welcome } from './routes';
 
 // Crear aplicación Express
 export function createApp(): Application {
@@ -20,7 +22,7 @@ export function createApp(): Application {
 
   // Rate limiting global
   app.use(rateLimiter);
-  
+
   app.use(helmet());
   app.use(cors(config.cors));
   app.use(express.json());
@@ -31,36 +33,13 @@ export function createApp(): Application {
     app.use(morgan('dev'));
   }
 
-  // Ruta de bienvenida
-  app.get('/', (req: Request, res: Response) => {
-    res.json({
-      message: 'API is running',
-      version: '1.0.0',
-      environment: config.env,
-    });
-  });
-
+  app.use('/', welcome);
   app.use('/health', health);
+  app.use('/api/auth', auth);
   app.use('/api/users', users);
 
-  // Middleware de manejo de errores
-  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error('Error:', err);
-    
-    res.status(500).json({
-      error: config.env === 'development' ? err.message : 'Internal server error',
-      ...(config.env === 'development' && { stack: err.stack }),
-    });
-  });
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
-  // Ruta 404
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({
-      error: 'Not found',
-      path: req.path,
-      method: req.method,
-    });
-  });
-
-  return app;
+  return app;   
 }

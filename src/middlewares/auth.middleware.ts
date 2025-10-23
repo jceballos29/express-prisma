@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import logger, { loggerHelpers } from '../utils/logger';
+import { logger, loggerHelpers } from '../shared/utils';
 
 // Extender tipo Request para incluir user
 declare global {
@@ -66,7 +66,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     }
 
     logger.error({ err: error }, 'Authentication error');
-    
+
     return res.status(500).json({
       error: 'Internal server error',
     });
@@ -117,7 +117,7 @@ export function authorize(...allowedRoles: string[]) {
 
     if (!allowedRoles.includes(userRole)) {
       loggerHelpers.logAuth('unauthorized_role', req.user.id, false);
-      
+
       return res.status(403).json({
         error: 'Forbidden',
         message: 'Insufficient permissions',
@@ -151,7 +151,7 @@ export function authorizeOwner(getUserIdFromRequest: (req: Request) => string | 
     // Verificar ownership
     if (resourceUserId.toString() !== requestingUserId.toString()) {
       loggerHelpers.logAuth('unauthorized_resource', req.user.id, false);
-      
+
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You can only access your own resources',
@@ -202,9 +202,9 @@ export function userRateLimit(req: Request, res: Response, next: NextFunction) {
   // Si hay usuario, usar su ID para rate limiting
   // Si no hay usuario, usar IP
   const identifier = req.user?.id || req.ip;
-  
+
   // Puedes agregar la lógica de rate limiting aquí
   // o usar esto en conjunto con express-rate-limit
-  
+
   next();
 }
