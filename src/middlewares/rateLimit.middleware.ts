@@ -1,9 +1,9 @@
+import { Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import { getRedisClient } from '../config/redis';
 import { config } from '../config';
+import { getRedisClient } from '../config/redis';
 import { logger } from '../shared/utils';
-import { Request, Response } from 'express';
 
 // Rate limiter básico (en memoria)
 export const basicRateLimiter = rateLimit({
@@ -30,33 +30,6 @@ export const basicRateLimiter = rateLimit({
 });
 
 // Rate limiter con Redis (para producción/múltiples instancias)
-export const redisRateLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-
-  // Usar Redis como store
-  store: new RedisStore({
-    // @ts-expect-error - RedisStore espera un cliente legacy
-    client: getRedisClient(),
-    prefix: 'rate_limit:',
-  }),
-
-  handler: (req: Request, res: Response) => {
-    logger.warn({
-      ip: req.ip,
-      path: req.path,
-      userAgent: req.headers['user-agent'],
-    }, 'Rate limit exceeded (Redis)');
-
-    res.status(429).json({
-      error: 'Too many requests',
-      message: 'Please try again later',
-      retryAfter: res.getHeader('Retry-After'),
-    });
-  },
-});
 
 // Rate limiter estricto para autenticación
 export const authRateLimiter = rateLimit({
@@ -81,8 +54,41 @@ export const authRateLimiter = rateLimit({
   },
 });
 
+export const createRedisRateLimiter = () => {
+  const redisClient = getRedisClient();
+
+  return rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+
+    // Usar Redis como store
+    store: new RedisStore({
+      // @ts-expect-error - RedisStore espera un cliente legacy
+      client: redisClient,
+      prefix: 'rate_limit:',
+    }),
+
+    handler: (req: Request, res: Response) => {
+      logger.warn({
+        ip: req.ip,
+        path: req.path,
+        userAgent: req.headers['user-agent'],
+      }, 'Rate limit exceeded (Redis)');
+
+      res.status(429).json({
+        error: 'Too many requests',
+        message: 'Please try again later',
+        retryAfter: res.getHeader('Retry-After'),
+      });
+    },
+  });
+};
+
 // Rate limiter flexible por usuario
 export const createUserRateLimiter = (maxRequests: number, windowMinutes: number = 15) => {
+
   return rateLimit({
     windowMs: windowMinutes * 60 * 1000,
     max: maxRequests,
@@ -177,6 +183,3 @@ export class RedisRateLimiter {
     }
   }
 }
-
-// Exportar rate limiter recomendado según entorno
-export const rateLimiter = config.env === 'production' ? redisRateLimiter : basicRateLimiter;

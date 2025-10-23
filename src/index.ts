@@ -3,33 +3,34 @@ import { config } from './config';
 import { connectDatabase, disconnectDatabase, prisma } from './config/database';
 import { connectRedis, disconnectRedis, getRedisClient } from './config/redis';
 import { createApp } from './app';
+import { logger } from './shared/utils';
 
 // Función para iniciar el servidor
 async function startServer() {
   try {
-    console.log('🚀 Starting server...\n');
-
+    logger.info('🚀 Starting server...');
+    
     // 1. Conectar a la base de datos
-    console.log('📊 Connecting to database...');
+    logger.info('📊 Connecting to database...');
     await connectDatabase();
 
     // 2. Conectar a Redis
-    console.log('\n💾 Connecting to Redis...');
+    logger.info('💾 Connecting to Redis...');
     await connectRedis();
 
-    console.log('\n🔄 Initializing application...');
+    logger.info('🔄 Initializing application...');
     const app = createApp();
     const server: http.Server = http.createServer(app);
 
 
     // 3. Iniciar servidor HTTP
     server.listen(config.server.port, () => {
-      console.log('\n✅ Server started successfully!\n');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`Environment:  ${config.env}`);
-      console.log(`URL:          http://${config.server.host}:${config.server.port}`);
-      console.log(`Health:       http://${config.server.host}:${config.server.port}/health`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      logger.info('✅ Server started successfully!');
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      logger.info(`Environment:  ${config.env}`);
+      logger.info(`URL:          http://${config.server.host}:${config.server.port}`);
+      logger.info(`Health:       http://${config.server.host}:${config.server.port}/health`);
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     });
 
     // Manejo de errores del servidor

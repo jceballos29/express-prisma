@@ -17,7 +17,7 @@ const reconnectStrategy = (retries: number): number | Error => {
     logger.error('❌ Redis: Maximum reconnection attempts reached');
     return new Error('Too many reconnection attempts');
   }
-  
+
   // Estrategia exponencial: 100ms, 200ms, 400ms, etc.
   const delay = Math.min(retries * 100, 3000);
   logger.warn({ retries, delay }, 'Redis reconnecting...');
@@ -48,9 +48,9 @@ export function createRedisClient(): RedisClient {
   // ============================================
 
   client.on('error', (err) => {
-    loggerHelpers.logError(err, { 
+    loggerHelpers.logError(err, {
       service: 'redis',
-      event: 'error' 
+      event: 'error'
     });
   });
 
@@ -92,19 +92,19 @@ export async function connectRedis(): Promise<RedisClient> {
     if (connectingPromise) return connectingPromise;
 
     connectingPromise = (async () => {
-    redisClient = createRedisClient();
-    await redisClient.connect();
-    await redisClient.ping();
-    console.log('✅ Redis health check passed');
-    connectingPromise = null;
-    return redisClient!;
-  })();
-    
+      redisClient = createRedisClient();
+      await redisClient.connect();
+      await redisClient.ping();
+      logger.info('✅ Redis health check passed');
+      connectingPromise = null;
+      return redisClient!;
+    })();
+
     return connectingPromise;
   } catch (error) {
-    loggerHelpers.logError(error as Error, { 
+    loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'connect' 
+      action: 'connect'
     });
     throw error;
   }
@@ -121,9 +121,9 @@ export async function disconnectRedis(): Promise<void> {
       logger.info('✅ Redis: Disconnected gracefully');
     }
   } catch (error) {
-    loggerHelpers.logError(error as Error, { 
+    loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'disconnect' 
+      action: 'disconnect'
     });
 
   }
@@ -148,13 +148,13 @@ export async function checkRedisHealth(): Promise<boolean> {
     if (!redisClient || !redisClient.isOpen) {
       return false;
     }
-    
+
     const result = await redisClient.ping();
     return result === 'PONG';
   } catch (error) {
-    loggerHelpers.logError(error as Error, { 
+    loggerHelpers.logError(error as Error, {
       service: 'redis',
-      check: 'health' 
+      check: 'health'
     });
     return false;
   }
@@ -174,7 +174,7 @@ export async function getRedisInfo(): Promise<{
 
     const info = await redisClient.info();
     const infoObj: Record<string, string> = {};
-    
+
     // Parsear info string a objeto
     info.split('\r\n').forEach(line => {
       if (line && !line.startsWith('#')) {
@@ -190,9 +190,9 @@ export async function getRedisInfo(): Promise<{
       info: infoObj,
     };
   } catch (error) {
-    loggerHelpers.logError(error as Error, { 
+    loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'getInfo' 
+      action: 'getInfo'
     });
     return { connected: false };
   }
@@ -217,10 +217,17 @@ export async function flushRedis(): Promise<boolean> {
     logger.warn('⚠️  Redis: Database flushed');
     return true;
   } catch (error) {
-    loggerHelpers.logError(error as Error, { 
+    loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'flush' 
+      action: 'flush'
     });
     return false;
   }
+}
+
+/**
+ * Verificar si Redis está conectado
+ */
+export function isRedisConnected(): boolean {
+  return !!(redisClient && redisClient.isOpen);
 }

@@ -83,7 +83,7 @@ export class UserRepository implements IRepository<User> {
         data: {
           email: data.email,
           name: data.name,
-          // password: data.password, // Agregar cuando tengas el campo en Prisma
+          password: data.password, // Agregar cuando tengas el campo en Prisma
         },
       });
     } catch (error) {

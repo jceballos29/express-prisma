@@ -5,10 +5,14 @@ import morgan from 'morgan';
 import { config } from './config';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { requestId, requestLogger } from './middlewares/logger.middleware';
-import { rateLimiter } from './middlewares/rateLimit.middleware';
+import {
+  basicRateLimiter,
+  createRedisRateLimiter,
+} from './middlewares/rateLimit.middleware';
 import { auth } from './modules/auth';
 import { users } from './modules/users';
 import { health, welcome } from './routes';
+import { isRedisConnected } from './config/redis';
 
 // Crear aplicación Express
 export function createApp(): Application {
@@ -21,7 +25,11 @@ export function createApp(): Application {
   app.use(requestLogger);
 
   // Rate limiting global
-  app.use(rateLimiter);
+  app.use(
+    config.env === 'production' && isRedisConnected()
+      ? createRedisRateLimiter()
+      : basicRateLimiter
+  );
 
   app.use(helmet());
   app.use(cors(config.cors));
@@ -41,5 +49,5 @@ export function createApp(): Application {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  return app;   
+  return app;
 }

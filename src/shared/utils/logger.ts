@@ -5,21 +5,22 @@ import { Request, Response } from 'express';
 // Configuración de Pino
 export const logger = pino({
   level: config.logging.level,
-  
+
   // Pretty print en desarrollo
-  transport: config.env === 'development'
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'yyyy-mm-dd HH:MM:ss',
-          ignore: 'pid,hostname',
-          singleLine: false,
-          messageFormat: '{levelLabel} - {msg}',
-        },
-      }
-    : undefined,
-  
+  transport:
+    config.env === 'development'
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'yyyy-mm-dd HH:MM:ss',
+            ignore: 'pid,hostname',
+            singleLine: false,
+            messageFormat: '{levelLabel} - {msg}',
+          },
+        }
+      : undefined,
+
   // Serializers personalizados
   serializers: {
     req: (req: Request) => ({
@@ -34,12 +35,10 @@ export const logger = pino({
     }),
     err: pino.stdSerializers.err,
   },
-  
+
   // Campos base
-  base: {
-    env: config.env,
-  },
-  
+  base: config.env === 'production' ? { env: config.env } : undefined,
+
   timestamp: pino.stdTimeFunctions.isoTime,
 });
 
@@ -53,14 +52,19 @@ export const morganStream = {
 // Helper methods para logging específico
 export const loggerHelpers = {
   // HTTP Request logging
-  logRequest: (method: string, url: string, statusCode: number, duration: number) => {
+  logRequest: (
+    method: string,
+    url: string,
+    statusCode: number,
+    duration: number
+  ) => {
     const logData = {
       method,
       url,
       statusCode,
       duration: `${duration}ms`,
     };
-    
+
     if (statusCode >= 500) {
       logger.error(logData, 'HTTP Request - Server Error');
     } else if (statusCode >= 400) {
@@ -98,9 +102,13 @@ export const loggerHelpers = {
   },
 
   // Authentication events
-  logAuth: (action: string, userId?: string | number, success: boolean = true) => {
+  logAuth: (
+    action: string,
+    userId?: string | number,
+    success: boolean = true
+  ) => {
     const logData = { action, userId, success };
-    
+
     if (success) {
       logger.info(logData, 'Authentication Success');
     } else {
@@ -121,7 +129,11 @@ export const loggerHelpers = {
   },
 
   // Performance logging
-  logPerformance: (operation: string, duration: number, metadata?: Record<string, any>) => {
+  logPerformance: (
+    operation: string,
+    duration: number,
+    metadata?: Record<string, any>
+  ) => {
     const logData = {
       operation,
       duration: `${duration}ms`,
