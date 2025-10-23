@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres
+    container_name: researcher_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: researcher
+    volumes:
+      - researcher_postgres:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  redis: 
+    image: redis
+    container_name: researcher_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5 
+
+volumes:
+  researcher_postgres:
+    driver: local
+  redis_data:
+    driver: local

@@ -1,0 +1,31 @@
+#Dependencias
+node_modules/
+
+#Variables de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+#Archivos de sistema
+.DS_Store
+*.log
+
+#Builds
+dist/
+build/
+
+#prisma
+
+/.idea
+.vscode/
+prisma/dev.db
+
+
+/src/generated/prisma
+
+/src/generated/prisma
+
+/src/generated/prisma
