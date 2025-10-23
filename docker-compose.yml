@@ -1,14 +1,14 @@
 services:
   postgres:
     image: postgres
-    container_name: researcher_postgres
+    container_name: postgres_db
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: researcher
     volumes:
-      - researcher_postgres:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql
     ports:
       - "5432:5432"
     healthcheck:
@@ -19,7 +19,7 @@ services:
   
   redis: 
     image: redis
-    container_name: researcher_redis
+    container_name: redis_cache
     restart: always
     ports:
       - "6379:6379"
@@ -32,7 +32,7 @@ services:
       retries: 5 
 
 volumes:
-  researcher_postgres:
+  postgres_data:
     driver: local
   redis_data:
     driver: local

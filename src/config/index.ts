@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import {z} from 'zod';
 import dotenv from 'dotenv';
 
@@ -25,15 +26,10 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
-
-  ONE_DATA_API_URL: z.url(),
-  ONE_DATA_API_PAT: z.string(),
-  ONE_DATA_ODATA_URL: z.url(),
-  ONE_DATA_EXPLORER_URL: z.url(),
 });
 
 function validateEnv() {
-  try{
+  try {
     return envSchema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -74,21 +70,23 @@ export const config = {
   },
 
   jwt: {
-    secret: env.JWT_SECRET,
-    expiresIn: env.JWT_EXPIRES_IN,
-    refreshSecret: env.JWT_REFRESH_SECRET,
-    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+    secret: env.JWT_SECRET as jwt.Secret,
+    expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+    refreshSecret: env.JWT_REFRESH_SECRET as jwt.Secret,
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   },
 
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
-    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
+    max: env.RATE_LIMIT_MAX_REQUESTS,
   },
 
-  logLevel: env.LOG_LEVEL,
+  logging: {
+    level: env.LOG_LEVEL,
+  },
 
   cors: {
-    origins: env.CORS_ORIGINS.split(',').map(origin => origin.trim()),
+    origin: env.CORS_ORIGINS.split(',').map(origin => origin.trim()),
     credentials: true,
   },
 } as const;

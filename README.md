@@ -29,11 +29,3 @@ Pasos rápidos:
 5. Ejecuta en modo desarrollo:
 
    npm run dev
-
-Endpoints:
-
-- GET / -> info
-- GET /api/health -> salud
-- GET /api/users -> lista de usuarios
-- POST /api/users -> crear usuario
-- GET /api/external -> ejemplo de request con axios

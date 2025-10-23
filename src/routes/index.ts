@@ -1,1 +1,2 @@
-export { default as apiRouter } from './api';
+export { default as health } from './health.routes';
+export { default as users } from './users.routes';

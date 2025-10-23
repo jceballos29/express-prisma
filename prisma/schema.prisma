@@ -14,11 +14,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model OneDataSyncSettings {
-  id                  String   @id @default(uuid())
-  code                String   @unique
-  continuationToken   String?
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
