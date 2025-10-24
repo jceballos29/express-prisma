@@ -1,6 +1,7 @@
+import type { Request, Response } from 'express';
 import pino from 'pino';
+
 import { config } from '../../config';
-import { Request, Response } from 'express';
 
 // Configuración de Pino
 export const logger = pino({
@@ -16,7 +17,7 @@ export const logger = pino({
             translateTime: 'yyyy-mm-dd HH:MM:ss',
             ignore: 'pid,hostname',
             singleLine: false,
-            messageFormat: '{levelLabel} - {msg}',
+            messageFormat: '{level} - {msg}',
           },
         }
       : undefined,
@@ -52,12 +53,7 @@ export const morganStream = {
 // Helper methods para logging específico
 export const loggerHelpers = {
   // HTTP Request logging
-  logRequest: (
-    method: string,
-    url: string,
-    statusCode: number,
-    duration: number
-  ) => {
+  logRequest: (method: string, url: string, statusCode: number, duration: number) => {
     const logData = {
       method,
       url,
@@ -81,7 +77,7 @@ export const loggerHelpers = {
         query: config.env === 'development' ? query : '[REDACTED]',
         duration: `${duration}ms`,
       },
-      'Database Query'
+      'Database Query',
     );
   },
 
@@ -91,22 +87,18 @@ export const loggerHelpers = {
   },
 
   // Error logging con contexto
-  logError: (error: Error, context?: Record<string, any>) => {
+  logError: (error: Error, context?: Record<string, unknown>) => {
     logger.error(
       {
         err: error,
         ...context,
       },
-      error.message
+      error.message,
     );
   },
 
   // Authentication events
-  logAuth: (
-    action: string,
-    userId?: string | number,
-    success: boolean = true
-  ) => {
+  logAuth: (action: string, userId?: string | number, success: boolean = true) => {
     const logData = { action, userId, success };
 
     if (success) {
@@ -117,23 +109,19 @@ export const loggerHelpers = {
   },
 
   // WebSocket events
-  logWebSocket: (event: string, socketId?: string, data?: any) => {
+  logWebSocket: <T>(event: string, socketId?: string, data?: T) => {
     logger.info(
       {
         event,
         socketId,
         ...data,
       },
-      `WebSocket: ${event}`
+      `WebSocket: ${event}`,
     );
   },
 
   // Performance logging
-  logPerformance: (
-    operation: string,
-    duration: number,
-    metadata?: Record<string, any>
-  ) => {
+  logPerformance: (operation: string, duration: number, metadata?: Record<string, unknown>) => {
     const logData = {
       operation,
       duration: `${duration}ms`,

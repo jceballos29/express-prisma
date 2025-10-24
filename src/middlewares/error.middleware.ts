@@ -1,28 +1,30 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+
 import { config } from '../config';
 import { AppError } from '../shared/errors/app.error';
 import { logger } from '../shared/utils';
-import { PrismaClientKnownRequestError, PrismaClientValidationError } from './../generated/prisma/internal/prismaNamespace';
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from './../generated/prisma/internal/prismaNamespace';
 
 /**
  * Middleware global para manejo de errores
  */
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
   // Log del error
-  logger.error({
-    err,
-    path: req.path,
-    method: req.method,
-    ip: req.ip,
-    body: req.body,
-    query: req.query,
-    params: req.params,
-  }, 'Request error');
+  logger.error(
+    {
+      err,
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      body: req.body,
+      query: req.query,
+      params: req.params,
+    },
+    'Request error',
+  );
 
   // Si ya se envió la respuesta, pasar al siguiente handler
   if (res.headersSent) {
@@ -75,7 +77,7 @@ function handlePrismaError(error: PrismaClientKnownRequestError): {
   message: string;
 } {
   switch (error.code) {
-    case 'P2002':
+    case 'P2002': {
       // Unique constraint violation
       const target = error.meta?.target as string[] | undefined;
       const field = target?.[0] || 'field';
@@ -83,6 +85,7 @@ function handlePrismaError(error: PrismaClientKnownRequestError): {
         status: 409,
         message: `A record with this ${field} already exists`,
       };
+    }
 
     case 'P2025':
       // Record not found
@@ -117,11 +120,14 @@ function handlePrismaError(error: PrismaClientKnownRequestError): {
  * Middleware para rutas no encontradas (404)
  */
 export function notFoundHandler(req: Request, res: Response): void {
-  logger.warn({
-    path: req.path,
-    method: req.method,
-    ip: req.ip,
-  }, 'Route not found');
+  logger.warn(
+    {
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+    },
+    'Route not found',
+  );
 
   res.status(404).json({
     success: false,

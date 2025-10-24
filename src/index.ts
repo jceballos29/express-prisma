@@ -1,15 +1,16 @@
 import http from 'http';
+
+import { createApp } from './app';
 import { config } from './config';
 import { connectDatabase, disconnectDatabase, prisma } from './config/database';
 import { connectRedis, disconnectRedis, getRedisClient } from './config/redis';
-import { createApp } from './app';
 import { logger } from './shared/utils';
 
 // Función para iniciar el servidor
 async function startServer() {
   try {
     logger.info('🚀 Starting server...');
-    
+
     // 1. Conectar a la base de datos
     logger.info('📊 Connecting to database...');
     await connectDatabase();
@@ -21,7 +22,6 @@ async function startServer() {
     logger.info('🔄 Initializing application...');
     const app = createApp();
     const server: http.Server = http.createServer(app);
-
 
     // 3. Iniciar servidor HTTP
     server.listen(config.server.port, () => {
@@ -53,14 +53,11 @@ async function startServer() {
 
 // Función de limpieza
 async function cleanup() {
-  console.log('\n⚠️  Shutting down gracefully...\n');
+  logger.info('⚠️  Shutting down gracefully...');
 
   try {
-    await Promise.all([
-      disconnectRedis(),
-      disconnectDatabase(),
-    ]);
-    console.log('✅ All connections closed');
+    await Promise.all([disconnectRedis(), disconnectDatabase()]);
+    logger.info('✅ All connections closed');
   } catch (error) {
     console.error('❌ Error during cleanup:', error);
   }
@@ -80,16 +77,23 @@ process.on('SIGTERM', async () => {
 // Manejo de errores no capturados
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  cleanup().then(() => process.exit(1));
+  cleanup()
+    .then(() => process.exit(1))
+    .catch(() => process.exit(1));
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  cleanup().then(() => process.exit(1));
+  cleanup()
+    .then(() => process.exit(1))
+    .catch(() => process.exit(1));
 });
 
 // Iniciar servidor
-startServer();
+void startServer().catch((error) => {
+  console.error('❌ Error starting server:', error);
+  process.exit(1);
+});
 
 // Exportar para testing
 export { prisma, getRedisClient };

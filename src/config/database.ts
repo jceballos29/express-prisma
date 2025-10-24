@@ -1,36 +1,43 @@
 import { PrismaClient } from '../generated/prisma/client';
+import {
+  PrismaClientKnownRequestError,
+  type LogEvent,
+  type QueryEvent,
+} from '../generated/prisma/internal/prismaNamespace';
 import { logger, loggerHelpers } from '../shared/utils';
+
 import { config } from './index';
 
 // Crear instancia única de Prisma
 export const prisma = new PrismaClient({
-  log: config.env === 'development'
-    ? [
-      { emit: 'event', level: 'query' },
-      { emit: 'event', level: 'info' },
-      { emit: 'event', level: 'warn' },
-      { emit: 'event', level: 'error' },
-    ]
-    : [{ emit: 'event', level: 'error' }],
+  log:
+    config.env === 'development'
+      ? [
+          { emit: 'event', level: 'query' },
+          { emit: 'event', level: 'info' },
+          { emit: 'event', level: 'warn' },
+          { emit: 'event', level: 'error' },
+        ]
+      : [{ emit: 'event', level: 'error' }],
   errorFormat: config.env === 'development' ? 'pretty' : 'minimal',
 });
 
 // Event listeners para logging detallado
 if (config.env === 'development') {
-  prisma.$on('query' as never, (e: any) => {
+  prisma.$on('query' as never, (e: QueryEvent) => {
     loggerHelpers.logDatabase(e.query, e.duration);
   });
 }
 
-prisma.$on('info' as never, (e: any) => {
+prisma.$on('info' as never, (e: LogEvent) => {
   logger.info({ prisma: e }, 'Prisma info');
 });
 
-prisma.$on('warn' as never, (e: any) => {
+prisma.$on('warn' as never, (e: LogEvent) => {
   logger.warn({ prisma: e }, 'Prisma warning');
 });
 
-prisma.$on('error' as never, (e: any) => {
+prisma.$on('error' as never, (e: LogEvent) => {
   logger.error({ prisma: e }, 'Prisma error');
 });
 
@@ -48,7 +55,7 @@ export async function connectDatabase(): Promise<void> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'database',
-      action: 'connect'
+      action: 'connect',
     });
     throw error;
   }
@@ -64,7 +71,7 @@ export async function disconnectDatabase(): Promise<void> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'database',
-      action: 'disconnect'
+      action: 'disconnect',
     });
   }
 }
@@ -79,7 +86,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'database',
-      check: 'health'
+      check: 'health',
     });
     return false;
   }
@@ -107,7 +114,7 @@ export async function getDatabaseInfo(): Promise<{
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'database',
-      action: 'getInfo'
+      action: 'getInfo',
     });
     return { connected: false };
   }
@@ -117,67 +124,72 @@ export async function getDatabaseInfo(): Promise<{
  * Manejo de errores de Prisma
  * Convierte errores de Prisma a un formato más amigable
  */
-export function handlePrismaError(error: any): {
+export function handlePrismaError(error: unknown): {
   status: number;
   message: string;
   field?: string;
 } {
-  // P2002: Unique constraint violation
-  if (error.code === 'P2002') {
-    const target = error.meta?.target as string[] | undefined;
-    const field = target?.[0] || 'field';
-    return {
-      status: 409,
-      message: `A record with this ${field} already exists`,
-      field,
-    };
-  }
+  if (error instanceof PrismaClientKnownRequestError) {
+    // P2002: Unique constraint violation
+    if (error.code === 'P2002') {
+      const target = error.meta?.target as string[] | undefined;
+      const field = target?.[0] || 'field';
+      return {
+        status: 409,
+        message: `A record with this ${field} already exists`,
+        field,
+      };
+    }
 
-  // P2025: Record not found
-  if (error.code === 'P2025') {
-    return {
-      status: 404,
-      message: 'Record not found',
-    };
-  }
+    // P2025: Record not found
+    if (error.code === 'P2025') {
+      return {
+        status: 404,
+        message: 'Record not found',
+      };
+    }
 
-  // P2003: Foreign key constraint violation
-  if (error.code === 'P2003') {
-    const field = error.meta?.field_name;
-    return {
-      status: 400,
-      message: 'Invalid reference to related record',
-      field,
-    };
-  }
+    // P2003: Foreign key constraint violation
+    if (error.code === 'P2003') {
+      const field = (error.meta as { field_name?: string })?.field_name;
+      return {
+        status: 400,
+        message: 'Invalid reference to related record',
+        field,
+      };
+    }
 
-  // P2014: Invalid ID
-  if (error.code === 'P2014') {
-    return {
-      status: 400,
-      message: 'Invalid ID provided',
-    };
-  }
+    // P2014: Invalid ID
+    if (error.code === 'P2014') {
+      return {
+        status: 400,
+        message: 'Invalid ID provided',
+      };
+    }
 
-  // P2016: Query interpretation error
-  if (error.code === 'P2016') {
-    return {
-      status: 400,
-      message: 'Invalid query parameters',
-    };
-  }
+    // P2016: Query interpretation error
+    if (error.code === 'P2016') {
+      return {
+        status: 400,
+        message: 'Invalid query parameters',
+      };
+    }
 
-  // P2021: Table does not exist
-  if (error.code === 'P2021') {
-    return {
-      status: 500,
-      message: 'Database schema error',
-    };
+    // P2021: Table does not exist
+    if (error.code === 'P2021') {
+      return {
+        status: 500,
+        message: 'Database schema error',
+      };
+    }
   }
 
   // Error genérico
+  const message =
+    config.env === 'development' && error instanceof Error ? error.message : 'Database error';
+
   return {
     status: 500,
-    message: config.env === 'development' ? error.message : 'Database error',
+    message,
   };
 }

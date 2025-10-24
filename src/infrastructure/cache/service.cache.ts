@@ -1,5 +1,5 @@
 import { getRedisClient } from '../../config/redis';
-import { ICacheService } from '../../shared/interfaces';
+import type { ICacheService } from '../../shared/interfaces';
 import { logger, loggerHelpers } from '../../shared/utils';
 
 export class CacheService implements ICacheService {
@@ -25,7 +25,7 @@ export class CacheService implements ICacheService {
     }
   }
 
-  async set(key: string, value: any, ttlSeconds?: number): Promise<boolean> {
+  async set<T>(key: string, value: T, ttlSeconds?: number): Promise<boolean> {
     try {
       const client = this.getClient();
       const serialized = JSON.stringify(value);

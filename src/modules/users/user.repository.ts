@@ -1,25 +1,25 @@
+import type { User, CreateUserDto, UpdateUserDto, UserFilters } from './user.types';
 import { prisma } from '../../config/database';
-import { IRepository, PaginationQuery } from '../../shared/interfaces';
-import { User, CreateUserDto, UpdateUserDto, UserFilters } from './user.types';
+import type { UserWhereInput } from '../../generated/prisma/models';
+import type { IRepository, PaginationQuery } from '../../shared/interfaces';
 import { logger } from '../../shared/utils';
-import { UserWhereInput } from '../../generated/prisma/models';
 
 export class UserRepository implements IRepository<User> {
   async findAll(query?: PaginationQuery & UserFilters): Promise<User[]> {
     try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        sortBy = 'createdAt', 
-        order = 'desc', 
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        order = 'desc',
         email, // <- Directamente aquí
-        name,  // <- Directamente aquí
+        name, // <- Directamente aquí
         createdAfter, // <- Directamente aquí
-        createdBefore // <- Directamente aquí
+        createdBefore, // <- Directamente aquí
       } = query || {};
-      
+
       const skip = (page - 1) * limit;
-      
+
       // Construir where clause
       const where: UserWhereInput = {};
       if (email) where.email = { contains: email };
@@ -44,10 +44,10 @@ export class UserRepository implements IRepository<User> {
 
   async count(filters?: UserFilters): Promise<number> {
     try {
-      const where: any = {};
+      const where: UserWhereInput = {};
       if (filters?.email) where.email = { contains: filters.email };
       if (filters?.name) where.name = { contains: filters.name };
-      
+
       return await prisma.user.count({ where });
     } catch (error) {
       logger.error({ err: error }, 'Error in UserRepository.count');
@@ -55,11 +55,12 @@ export class UserRepository implements IRepository<User> {
     }
   }
 
-  async findById(id: number | string): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     try {
-      return await prisma.user.findUnique({
-        where: { id: typeof id === 'string' ? parseInt(id) : id },
+      const user = await prisma.user.findUnique({
+        where: { id },
       });
+      return user;
     } catch (error) {
       logger.error({ err: error, id }, 'Error in UserRepository.findById');
       throw error;
@@ -92,10 +93,10 @@ export class UserRepository implements IRepository<User> {
     }
   }
 
-  async update(id: number | string, data: UpdateUserDto): Promise<User> {
+  async update(id: string, data: UpdateUserDto): Promise<User> {
     try {
       return await prisma.user.update({
-        where: { id: typeof id === 'string' ? parseInt(id) : id },
+        where: { id },
         data,
       });
     } catch (error) {
@@ -104,10 +105,10 @@ export class UserRepository implements IRepository<User> {
     }
   }
 
-  async delete(id: number | string): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
       await prisma.user.delete({
-        where: { id: typeof id === 'string' ? parseInt(id) : id },
+        where: { id },
       });
     } catch (error) {
       logger.error({ err: error, id }, 'Error in UserRepository.delete');
@@ -115,10 +116,10 @@ export class UserRepository implements IRepository<User> {
     }
   }
 
-  async exists(id: number | string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     try {
       const count = await prisma.user.count({
-        where: { id: typeof id === 'string' ? parseInt(id) : id },
+        where: { id },
       });
       return count > 0;
     } catch (error) {

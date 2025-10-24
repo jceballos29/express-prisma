@@ -1,10 +1,14 @@
 {
-	"extends": "./tsconfig.json",
-	"compilerOptions": {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist/src",
-		"declaration": true,
-		"sourceMap": false
-	},
-	"exclude": ["**/*.spec.ts", "node_modules", "src/__tests__"]
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "removeComments": true,
+    "noEmitOnError": true
+  },
+  "exclude": ["**/*.spec.ts", "node_modules", "src/__tests__"]
 }

@@ -1,56 +1,53 @@
-import { Request, Response, NextFunction } from 'express';
-import { z, ZodError, ZodObject } from 'zod';
+import type { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import type { ZodObject, ZodRawShape } from 'zod';
+
 import { logger } from '../shared/utils';
 
-
-// Tipo para especificar dónde validar
 type ValidationSource = 'body' | 'query' | 'params';
 
 /**
  * Middleware genérico de validación con Zod
- * @param schema - Schema de Zod para validar
- * @param source - Dónde buscar los datos (body, query, params)
+ * Tipado completo: infiere correctamente el tipo validado
  */
-export function validate(schema: ZodObject, source: ValidationSource = 'body') {
-  return async (req: Request, res: Response, next: NextFunction) => {
+export function validate<T extends ZodObject<ZodRawShape>, S extends ValidationSource = 'body'>(
+  schema: T,
+  source: S = 'body' as S,
+) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Obtener datos según la fuente
       const dataToValidate = req[source];
-
-      // Validar con Zod
       const validated = await schema.parseAsync(dataToValidate);
 
-      // Reemplazar los datos originales con los validados (type assertion para params)
-      if (source === 'params' || source === 'query') {
-        req[source] = validated as any;
-      } else {
-        req[source] = validated;
-      }
+      // Asignar de forma segura según la fuente
+      Object.assign(req[source], validated);
 
       next();
     } catch (error) {
-      if (error instanceof ZodError) {
-        // Formatear errores de Zod
-        const formattedErrors = error.issues.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
+      if (error instanceof z.ZodError) {
+        const formattedErrors = error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
         }));
 
-        logger.warn({
-          path: req.path,
-          method: req.method,
-          errors: formattedErrors,
-        }, 'Validation error');
+        logger.warn(
+          {
+            path: req.path,
+            method: req.method,
+            errors: formattedErrors,
+          },
+          'Validation error',
+        );
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: formattedErrors,
         });
+        return;
       }
 
       logger.error({ err: error }, 'Unexpected validation error');
-
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Internal server error during validation',
       });
     }
@@ -67,19 +64,26 @@ export function validateMultiple(schemas: {
 }) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const errors: any[] = [];
+      const errors: {
+        source: ValidationSource;
+        field: string;
+        message: string;
+      }[] = [];
 
       // Validar body
       if (schemas.body) {
         try {
-          req.body = await schemas.body.parseAsync(req.body);
+          const validated = await schemas.body.parseAsync(req.body);
+          Object.assign(req.body, validated);
         } catch (error) {
-          if (error instanceof ZodError) {
-            errors.push(...error.issues.map(err => ({
-              source: 'body',
-              field: err.path.join('.'),
-              message: err.message,
-            })));
+          if (error instanceof z.ZodError) {
+            errors.push(
+              ...error.issues.map((err) => ({
+                source: 'body' as ValidationSource,
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            );
           }
         }
       }
@@ -87,14 +91,17 @@ export function validateMultiple(schemas: {
       // Validar query
       if (schemas.query) {
         try {
-          req.query = await schemas.query.parseAsync(req.query) as any;
+          const validated = await schemas.query.parseAsync(req.query);
+          Object.assign(req.query, validated);
         } catch (error) {
-          if (error instanceof ZodError) {
-            errors.push(...error.issues.map(err => ({
-              source: 'query',
-              field: err.path.join('.'),
-              message: err.message,
-            })));
+          if (error instanceof z.ZodError) {
+            errors.push(
+              ...error.issues.map((err) => ({
+                source: 'query' as ValidationSource,
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            );
           }
         }
       }
@@ -102,38 +109,44 @@ export function validateMultiple(schemas: {
       // Validar params (con type assertion)
       if (schemas.params) {
         try {
-          const validatedParams = await schemas.params.parseAsync(req.params);
-          req.params = validatedParams as any;
+          const validated = await schemas.params.parseAsync(req.params);
+          Object.assign(req.params, validated);
         } catch (error) {
-          if (error instanceof ZodError) {
-            errors.push(...error.issues.map(err => ({
-              source: 'params',
-              field: err.path.join('.'),
-              message: err.message,
-            })));
+          if (error instanceof z.ZodError) {
+            errors.push(
+              ...error.issues.map((err) => ({
+                source: 'params' as ValidationSource,
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            );
           }
         }
       }
 
       // Si hay errores, retornar
       if (errors.length > 0) {
-        logger.warn({
-          path: req.path,
-          method: req.method,
-          errors,
-        }, 'Multiple validation errors');
+        logger.warn(
+          {
+            path: req.path,
+            method: req.method,
+            errors,
+          },
+          'Multiple validation errors',
+        );
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: errors,
         });
+        return;
       }
 
       next();
     } catch (error) {
       logger.error({ err: error }, 'Unexpected validation error');
 
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Internal server error during validation',
       });
     }
@@ -144,7 +157,7 @@ export function validateMultiple(schemas: {
 export const commonSchemas = {
   // ID numérico
   id: z.object({
-    id: z.coerce.number().int().positive(),
+    id: z.uuid(),
   }),
 
   // Paginación

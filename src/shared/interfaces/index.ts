@@ -1,5 +1,5 @@
 // Response genérico para APIs
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
@@ -35,7 +35,7 @@ export interface IRepository<T> {
 // Cache Interface
 export interface ICacheService {
   get<T>(key: string): Promise<T | null>;
-  set(key: string, value: any, ttl?: number): Promise<boolean>;
+  set<T>(key: string, value: T, ttl?: number): Promise<boolean>;
   del(key: string): Promise<boolean>;
   delPattern(pattern: string): Promise<number>;
 }
@@ -44,7 +44,7 @@ export interface ICacheService {
 export interface AuthPayload {
   id: number | string;
   email: string;
-  role?: string;
+  roles?: string[];
 }
 
 // Token response

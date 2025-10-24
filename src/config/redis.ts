@@ -1,6 +1,9 @@
-import { createClient, RedisClientType } from 'redis';
-import { config } from './index';
+import type { RedisClientType } from 'redis';
+import { createClient } from 'redis';
+
 import { logger, loggerHelpers } from '../shared/utils';
+
+import { config } from './index';
 
 // Tipo del cliente Redis
 type RedisClient = RedisClientType;
@@ -28,7 +31,6 @@ const reconnectStrategy = (retries: number): number | Error => {
  * Crear y configurar cliente Redis
  */
 export function createRedisClient(): RedisClient {
-
   if (!config.redis?.url) {
     throw new Error('❌ Redis URL not configured');
   }
@@ -50,7 +52,7 @@ export function createRedisClient(): RedisClient {
   client.on('error', (err) => {
     loggerHelpers.logError(err, {
       service: 'redis',
-      event: 'error'
+      event: 'error',
     });
   });
 
@@ -104,7 +106,7 @@ export async function connectRedis(): Promise<RedisClient> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'connect'
+      action: 'connect',
     });
     throw error;
   }
@@ -123,9 +125,8 @@ export async function disconnectRedis(): Promise<void> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'disconnect'
+      action: 'disconnect',
     });
-
   }
 }
 
@@ -154,7 +155,7 @@ export async function checkRedisHealth(): Promise<boolean> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'redis',
-      check: 'health'
+      check: 'health',
     });
     return false;
   }
@@ -176,7 +177,7 @@ export async function getRedisInfo(): Promise<{
     const infoObj: Record<string, string> = {};
 
     // Parsear info string a objeto
-    info.split('\r\n').forEach(line => {
+    info.split('\r\n').forEach((line) => {
       if (line && !line.startsWith('#')) {
         const [key, value] = line.split(':');
         if (key && value) {
@@ -192,7 +193,7 @@ export async function getRedisInfo(): Promise<{
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'getInfo'
+      action: 'getInfo',
     });
     return { connected: false };
   }
@@ -219,7 +220,7 @@ export async function flushRedis(): Promise<boolean> {
   } catch (error) {
     loggerHelpers.logError(error as Error, {
       service: 'redis',
-      action: 'flush'
+      action: 'flush',
     });
     return false;
   }

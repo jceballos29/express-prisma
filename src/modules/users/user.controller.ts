@@ -1,18 +1,32 @@
-import { NextFunction, Request, Response } from 'express';
-import { ApiResponse } from '../../shared/interfaces';
-import { UserService } from './user.service';
+import type { NextFunction, Request, Response } from 'express';
+
+import type { TypedRequest } from '@/shared/types/request';
+
 import { UserRepository } from './user.repository';
+import type {
+  CreateUserInput,
+  PaginationQuery,
+  UpdateUserInput,
+  UserIdParams,
+} from './user.schemas';
+import { UserService } from './user.service';
+import type { UserResponseDto } from './user.types';
+import type { ApiResponse } from '../../shared/interfaces';
 
 export class UserController {
   constructor(private userService: UserService) {}
 
   // GET /users
-  getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getAllUsers = async (
+    req: TypedRequest<PaginationQuery>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
-      const query = req.query as any;
+      const query = req.query;
       const result = await this.userService.getAllUsers(query);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<UserResponseDto[]> = {
         success: true,
         data: result.users,
         meta: result.meta,
@@ -25,12 +39,16 @@ export class UserController {
   };
 
   // GET /users/:id
-  getUserById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getUserById = async (
+    req: TypedRequest<undefined, undefined, UserIdParams>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const { id } = req.params;
       const user = await this.userService.getUserById(id);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<UserResponseDto> = {
         success: true,
         data: user,
       };
@@ -42,12 +60,16 @@ export class UserController {
   };
 
   // POST /users
-  createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  createUser = async (
+    req: TypedRequest<undefined, CreateUserInput>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const userData = req.body;
       const user = await this.userService.createUser(userData);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<UserResponseDto> = {
         success: true,
         data: user,
         message: 'User created successfully',
@@ -60,13 +82,17 @@ export class UserController {
   };
 
   // PUT /users/:id
-  updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  updateUser = async (
+    req: TypedRequest<undefined, UpdateUserInput, UserIdParams>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const { id } = req.params;
       const userData = req.body;
       const user = await this.userService.updateUser(id, userData);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<UserResponseDto> = {
         success: true,
         data: user,
         message: 'User updated successfully',
@@ -79,12 +105,16 @@ export class UserController {
   };
 
   // DELETE /users/:id
-  deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  deleteUser = async (
+    req: TypedRequest<undefined, undefined, UserIdParams>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const { id } = req.params;
       await this.userService.deleteUser(id);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<null> = {
         success: true,
         message: 'User deleted successfully',
       };
@@ -96,12 +126,12 @@ export class UserController {
   };
 
   // GET /users/me (perfil del usuario autenticado)
-  getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getProfile = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.user!.id;
+      const userId = res.locals.user.id;
       const user = await this.userService.getUserById(userId);
 
-      const response: ApiResponse = {
+      const response: ApiResponse<UserResponseDto> = {
         success: true,
         data: user,
       };

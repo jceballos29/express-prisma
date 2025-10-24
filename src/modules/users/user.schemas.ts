@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { commonSchemas } from '../../middlewares/validation.middleware';
 
 // Schema para crear usuario
@@ -10,14 +11,13 @@ export const createUserSchema = z.object({
 });
 
 // Schema para actualizar usuario
-export const updateUserSchema = z.object({
-  email: commonSchemas.email.optional(),
-  name: z.string().min(2).max(50).optional(),
-  age: z.number().int().positive().min(18).optional(),
-}).refine(
-  (data) => Object.keys(data).length > 0,
-  'At least one field must be provided'
-);
+export const updateUserSchema = z
+  .object({
+    email: commonSchemas.email.optional(),
+    name: z.string().min(2).max(50).optional(),
+    age: z.number().int().positive().min(18).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, 'At least one field must be provided');
 
 // Schema para query params de paginación
 export const paginationSchema = commonSchemas.pagination.extend({
@@ -26,6 +26,8 @@ export const paginationSchema = commonSchemas.pagination.extend({
   // Filtros adicionales
   email: z.string().optional(),
   name: z.string().optional(),
+  createdAfter: z.date().optional(),
+  createdBefore: z.date().optional(),
 });
 
 // Schema para params con ID

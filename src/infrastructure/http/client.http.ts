@@ -1,4 +1,6 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
+
 import { logger } from '../../shared/utils';
 
 /**
@@ -27,91 +29,82 @@ export class HttpClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        logger.debug({
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          baseURL: config.baseURL,
-        }, 'HTTP Request');
+        logger.debug(
+          {
+            method: config.method?.toUpperCase(),
+            url: config.url,
+            baseURL: config.baseURL,
+          },
+          'HTTP Request',
+        );
         return config;
       },
       (error) => {
         logger.error({ err: error }, 'HTTP Request Error');
         return Promise.reject(error);
-      }
+      },
     );
 
     // Response interceptor
     this.client.interceptors.response.use(
       (response) => {
-        logger.debug({
-          method: response.config.method?.toUpperCase(),
-          url: response.config.url,
-          status: response.status,
-        }, 'HTTP Response');
+        logger.debug(
+          {
+            method: response.config.method?.toUpperCase(),
+            url: response.config.url,
+            status: response.status,
+          },
+          'HTTP Response',
+        );
         return response;
       },
       (error: AxiosError) => {
-        logger.error({
-          method: error.config?.method?.toUpperCase(),
-          url: error.config?.url,
-          status: error.response?.status,
-          message: error.message,
-        }, 'HTTP Response Error');
+        logger.error(
+          {
+            method: error.config?.method?.toUpperCase(),
+            url: error.config?.url,
+            status: error.response?.status,
+            message: error.message,
+          },
+          'HTTP Response Error',
+        );
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   /**
    * GET request
    */
-  async get<T = any>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<AxiosResponse<T>> {
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.get<T>(url, config);
   }
 
   /**
    * POST request
    */
-  async post<T = any>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<AxiosResponse<T>> {
+  async post<T>(url: string, data?: T, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.post<T>(url, data, config);
   }
 
   /**
    * PUT request
    */
-  async put<T = any>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<AxiosResponse<T>> {
+  async put<T>(url: string, data?: T, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.put<T>(url, data, config);
   }
 
   /**
    * PATCH request
    */
-  async patch<T = any>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<AxiosResponse<T>> {
+  async patch<T>(url: string, data?: T, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.patch<T>(url, data, config);
   }
 
   /**
    * DELETE request
    */
-  async delete<T = any>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<AxiosResponse<T>> {
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.delete<T>(url, config);
   }
 
@@ -141,9 +134,6 @@ export class HttpClient {
 export const httpClient = new HttpClient();
 
 // Factory para crear clientes específicos
-export function createHttpClient(
-  baseURL: string,
-  headers?: Record<string, string>
-): HttpClient {
+export function createHttpClient(baseURL: string, headers?: Record<string, string>): HttpClient {
   return new HttpClient(baseURL, headers);
 }

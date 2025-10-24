@@ -1,15 +1,37 @@
 {
-	"compilerOptions": {
-		"target": "ES2022",
-		"module": "commonjs",
-		"lib": ["ES2022"],
-		"rootDir": "./",
-		"outDir": "dist",
-		"strict": true,
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
-	},
-	"include": ["src", "prisma/seed.ts"],
-	"exclude": ["node_modules", "dist"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    /* Salida y módulos */
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "rootDir": "./",
+    "outDir": "dist",
+
+    /* Strict mode: máxima seguridad */
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    /* Interoperabilidad y compatibilidad */
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Calidad y consistencia */
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    /* Paths (para imports absolutos tipo "@/shared/utils") */
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    },
+		"ignoreDeprecations": "6.0"
+  },
+  "include": ["src", "src/**/*.ts", "src/**/*.d.ts", "prisma/seed.ts"],
+  "exclude": ["node_modules", "dist", "eslint.config.mjs"]
 }

@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+
 import { config } from '../config';
 
 const router = Router();
@@ -12,6 +14,5 @@ router.get('/', (_req: Request, res: Response) => {
     // documentation: '/api/docs', // Si agregas Swagger
   });
 });
-
 
 export default router;

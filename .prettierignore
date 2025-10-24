@@ -1,0 +1,56 @@
+# 🧱 Dependencias y compilados
+node_modules
+dist
+build
+out
+coverage
+
+# 🗂️ Archivos de configuración o temporales
+.env
+.env.*
+*.log
+*.lock
+*.cache
+.tmp
+temp
+.DS_Store
+
+# 🧩 Archivos generados automáticamente
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+prisma/generated/
+generated/
+docs/generated/
+
+# 🧠 Configuración o plantillas del sistema
+.vscode
+.idea
+.eslintcache
+
+# 📦 Frontend: assets o archivos no de código
+public/*.js
+public/*.css
+public/*.html
+
+# 🧰 Herramientas de documentación o build
+storybook-static
+reports
+coverage
+*.snap
+
+# 🧪 Tests
+*.spec.ts
+*.test.ts
+*.spec.js
+*.test.js
+
+# 🧩 Nx / monorepo (si lo usas)
+.tmp/
+.cache/
+dist/
+project.json
+workspace.json
+
+# 🧾 Markdown o docs generados (opcional)
+CHANGELOG.md

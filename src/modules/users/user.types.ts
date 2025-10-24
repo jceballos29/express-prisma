@@ -1,9 +1,12 @@
+import type { Role } from '@/generated/prisma/enums';
+
 // Domain entity
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   password: string;
+  role: Role;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,6 +16,7 @@ export interface CreateUserDto {
   email: string;
   name?: string;
   password: string;
+  role?: Role;
 }
 
 export interface UpdateUserDto {
@@ -21,9 +25,10 @@ export interface UpdateUserDto {
 }
 
 export interface UserResponseDto {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
+  role?: Role;
   createdAt: Date;
 }
 

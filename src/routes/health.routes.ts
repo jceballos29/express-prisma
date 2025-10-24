@@ -1,7 +1,9 @@
-import { Router, Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+
+import { config } from '../config';
 import { checkDatabaseHealth } from '../config/database';
 import { checkRedisHealth } from '../config/redis';
-import { config } from '../config';
 
 const router = Router();
 
@@ -53,7 +55,7 @@ router.get('/detailed', async (_req: Request, res: Response) => {
     });
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     res.status(503).json({
       status: 'error',
       timestamp: new Date().toISOString(),
@@ -76,7 +78,7 @@ router.get('/ready', async (_req: Request, res: Response) => {
     } else {
       res.status(503).json({ ready: false });
     }
-  } catch (error) {
+  } catch {
     res.status(503).json({ ready: false });
   }
 });

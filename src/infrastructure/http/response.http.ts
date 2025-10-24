@@ -1,5 +1,6 @@
-import { Response } from 'express';
-import { ApiResponse, PaginationMeta } from '../../shared/interfaces';
+import type { Response } from 'express';
+
+import type { ApiResponse, PaginationMeta } from '../../shared/interfaces';
 
 /**
  * Clase para estandarizar todas las respuestas HTTP
@@ -8,12 +9,7 @@ export class ResponseHandler {
   /**
    * Respuesta exitosa genérica
    */
-  static success<T>(
-    res: Response,
-    data: T,
-    message?: string,
-    statusCode: number = 200
-  ): void {
+  static success<T>(res: Response, data: T, message?: string, statusCode: number = 200): void {
     const response: ApiResponse<T> = {
       success: true,
       data,
@@ -30,7 +26,7 @@ export class ResponseHandler {
     res: Response,
     data: T,
     meta: PaginationMeta,
-    message?: string
+    message?: string,
   ): void {
     const response: ApiResponse<T> = {
       success: true,
@@ -48,7 +44,7 @@ export class ResponseHandler {
   static created<T>(
     res: Response,
     data: T,
-    message: string = 'Resource created successfully'
+    message: string = 'Resource created successfully',
   ): void {
     this.success(res, data, message, 201);
   }
@@ -63,13 +59,8 @@ export class ResponseHandler {
   /**
    * Respuesta de error genérica
    */
-  static error(
-    res: Response,
-    message: string,
-    statusCode: number = 500,
-    details?: any
-  ): void {
-    const response: ApiResponse = {
+  static error<T>(res: Response, message: string, statusCode: number = 500, details?: T): void {
+    const response: ApiResponse<T> = {
       success: false,
       error: message,
       ...(details && { details }),
@@ -81,61 +72,45 @@ export class ResponseHandler {
   /**
    * Bad Request (400)
    */
-  static badRequest(
-    res: Response,
-    message: string = 'Bad request',
-    details?: any
-  ): void {
+  static badRequest<T>(res: Response, message: string = 'Bad request', details?: T): void {
     this.error(res, message, 400, details);
   }
 
   /**
    * Unauthorized (401)
    */
-  static unauthorized(
-    res: Response,
-    message: string = 'Unauthorized'
-  ): void {
+  static unauthorized(res: Response, message: string = 'Unauthorized'): void {
     this.error(res, message, 401);
   }
 
   /**
    * Forbidden (403)
    */
-  static forbidden(
-    res: Response,
-    message: string = 'Forbidden'
-  ): void {
+  static forbidden(res: Response, message: string = 'Forbidden'): void {
     this.error(res, message, 403);
   }
 
   /**
    * Not Found (404)
    */
-  static notFound(
-    res: Response,
-    resource: string = 'Resource'
-  ): void {
+  static notFound(res: Response, resource: string = 'Resource'): void {
     this.error(res, `${resource} not found`, 404);
   }
 
   /**
    * Conflict (409)
    */
-  static conflict(
-    res: Response,
-    message: string = 'Resource already exists'
-  ): void {
+  static conflict(res: Response, message: string = 'Resource already exists'): void {
     this.error(res, message, 409);
   }
 
   /**
    * Unprocessable Entity (422)
    */
-  static unprocessableEntity(
+  static unprocessableEntity<T>(
     res: Response,
     message: string = 'Unprocessable entity',
-    details?: any
+    details?: T,
   ): void {
     this.error(res, message, 422, details);
   }
@@ -146,7 +121,7 @@ export class ResponseHandler {
   static tooManyRequests(
     res: Response,
     message: string = 'Too many requests',
-    retryAfter?: number
+    retryAfter?: number,
   ): void {
     if (retryAfter) {
       res.setHeader('Retry-After', retryAfter);
@@ -157,10 +132,10 @@ export class ResponseHandler {
   /**
    * Internal Server Error (500)
    */
-  static internalError(
+  static internalError<T>(
     res: Response,
     message: string = 'Internal server error',
-    details?: any
+    details?: T,
   ): void {
     this.error(res, message, 500, details);
   }
@@ -168,10 +143,7 @@ export class ResponseHandler {
   /**
    * Service Unavailable (503)
    */
-  static serviceUnavailable(
-    res: Response,
-    message: string = 'Service unavailable'
-  ): void {
+  static serviceUnavailable(res: Response, message: string = 'Service unavailable'): void {
     this.error(res, message, 503);
   }
 
@@ -182,7 +154,7 @@ export class ResponseHandler {
     res: Response,
     statusCode: number,
     data: T,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): void {
     if (headers) {
       Object.entries(headers).forEach(([key, value]) => {

@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
+
 import { config } from '../config';
 import { getRedisClient } from '../config/redis';
 import { logger } from '../shared/utils';
@@ -15,11 +16,14 @@ export const basicRateLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   handler: (req, res) => {
-    logger.warn({
-      ip: req.ip,
-      path: req.path,
-      userAgent: req.headers['user-agent'],
-    }, 'Rate limit exceeded');
+    logger.warn(
+      {
+        ip: req.ip,
+        path: req.path,
+        userAgent: req.headers['user-agent'],
+      },
+      'Rate limit exceeded',
+    );
 
     res.status(429).json({
       error: 'Too many requests',
@@ -42,10 +46,13 @@ export const authRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    logger.warn({
-      ip: req.ip,
-      email: req.body.email,
-    }, 'Auth rate limit exceeded');
+    logger.warn(
+      {
+        ip: req.ip,
+        email: req.body.email,
+      },
+      'Auth rate limit exceeded',
+    );
 
     res.status(429).json({
       error: 'Too many failed attempts',
@@ -71,11 +78,14 @@ export const createRedisRateLimiter = () => {
     }),
 
     handler: (req: Request, res: Response) => {
-      logger.warn({
-        ip: req.ip,
-        path: req.path,
-        userAgent: req.headers['user-agent'],
-      }, 'Rate limit exceeded (Redis)');
+      logger.warn(
+        {
+          ip: req.ip,
+          path: req.path,
+          userAgent: req.headers['user-agent'],
+        },
+        'Rate limit exceeded (Redis)',
+      );
 
       res.status(429).json({
         error: 'Too many requests',
@@ -88,13 +98,12 @@ export const createRedisRateLimiter = () => {
 
 // Rate limiter flexible por usuario
 export const createUserRateLimiter = (maxRequests: number, windowMinutes: number = 15) => {
-
   return rateLimit({
     windowMs: windowMinutes * 60 * 1000,
     max: maxRequests,
-    keyGenerator: (req) => {
+    keyGenerator: (req: Request, res: Response) => {
       // Usar user ID si está autenticado, si no usar IP
-      return (req as any).user?.id?.toString() || req.ip || 'anonymous';
+      return res.locals.user?.id?.toString() || req.ip || 'anonymous';
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -137,10 +146,10 @@ export class RedisRateLimiter {
     this.max = options.max;
   }
 
-  async middleware(req: any, res: any, next: any) {
+  async middleware(req: Request, res: Response, next: NextFunction) {
     try {
       const redis = getRedisClient();
-      const identifier = req.user?.id?.toString() || req.ip || 'anonymous';
+      const identifier = res.locals.user?.id?.toString() || req.ip || 'anonymous';
       const key = `${this.prefix}:${identifier}`;
 
       // Obtener contador actual
@@ -150,17 +159,21 @@ export class RedisRateLimiter {
       if (count >= this.max) {
         const ttl = await redis.ttl(key);
 
-        logger.warn({
-          identifier,
-          path: req.path,
-          count,
-          max: this.max,
-        }, 'Custom rate limit exceeded');
+        logger.warn(
+          {
+            identifier,
+            path: req.path,
+            count,
+            max: this.max,
+          },
+          'Custom rate limit exceeded',
+        );
 
-        return res.status(429).json({
+        res.status(429).json({
           error: 'Too many requests',
           retryAfter: ttl,
         });
+        return;
       }
 
       // Incrementar contador

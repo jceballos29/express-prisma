@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
-import { PrismaClient } from '../../generated/prisma/client';
-import { TransactionClient } from '../../generated/prisma/internal/prismaNamespace';
+import type { PrismaClient } from '../../generated/prisma/client';
+import type { TransactionClient } from '../../generated/prisma/internal/prismaNamespace';
 import { logger } from '../../shared/utils';
 
 /**
@@ -16,9 +16,7 @@ export class DatabaseService {
   /**
    * Ejecutar operaciones en una transacción
    */
-  async transaction<T>(
-    callback: (tx: TransactionClient) => Promise<T>
-  ): Promise<T> {
+  async transaction<T>(callback: (tx: TransactionClient) => Promise<T>): Promise<T> {
     try {
       return await this.client.$transaction(callback);
     } catch (error) {
@@ -30,12 +28,9 @@ export class DatabaseService {
   /**
    * Ejecutar query raw con parámetros seguros
    */
-  async queryRaw<T = any>(
-    query: TemplateStringsArray,
-    ...values: any[]
-  ): Promise<T> {
+  async queryRaw<T = unknown>(query: TemplateStringsArray, ...values: unknown[]): Promise<T> {
     try {
-      return await this.client.$queryRaw(query, ...values) as T;
+      return (await this.client.$queryRaw(query, ...values)) as T;
     } catch (error) {
       logger.error({ err: error, query }, 'Raw query failed');
       throw error;
@@ -45,10 +40,7 @@ export class DatabaseService {
   /**
    * Ejecutar comando raw (INSERT, UPDATE, DELETE)
    */
-  async executeRaw(
-    query: TemplateStringsArray,
-    ...values: any[]
-  ): Promise<number> {
+  async executeRaw(query: TemplateStringsArray, ...values: unknown[]): Promise<number> {
     try {
       return await this.client.$executeRaw(query, ...values);
     } catch (error) {
@@ -94,9 +86,7 @@ export class DatabaseService {
   /**
    * Ejecutar operaciones en batch
    */
-  async batchOperations<T>(
-    operations: Array<Promise<T>>
-  ): Promise<T[]> {
+  async batchOperations<T>(operations: Array<Promise<T>>): Promise<T[]> {
     try {
       return await Promise.all(operations);
     } catch (error) {
@@ -108,22 +98,19 @@ export class DatabaseService {
   /**
    * Soft delete - agregar campo deletedAt en lugar de eliminar
    */
-  async softDelete(
-    model: string,
-    id: number | string
-  ): Promise<any> {
-    try {
-      const modelName = model.charAt(0).toLowerCase() + model.slice(1);
-      // @ts-ignore - Acceso dinámico a modelos
-      return await this.client[modelName].update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
-    } catch (error) {
-      logger.error({ err: error, model, id }, 'Soft delete failed');
-      throw error;
-    }
-  }
+  // async softDelete<T extends { id: number | string }>(model: string, id: T['id']): Promise<T> {
+  //   try {
+  //     const modelName = model.charAt(0).toLowerCase() + model.slice(1);
+  //     // Prisma Client usa índices dinámicos, por eso necesitamos forzar el tipo aquí
+  //     return (await (this.client as PrismaClient & Record<string, any>)[modelName].update({
+  //       where: { id },
+  //       data: { deletedAt: new Date() },
+  //     })) as T;
+  //   } catch (error) {
+  //     logger.error({ err: error, model, id }, 'Soft delete failed');
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Obtener cliente Prisma directo (usar con precaución)

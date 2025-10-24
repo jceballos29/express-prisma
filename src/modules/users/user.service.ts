@@ -1,24 +1,20 @@
 import { UserRepository } from './user.repository';
-import { cacheService } from '../../infrastructure';
-import { 
-  NotFoundError, 
-  ConflictError, 
-  BadRequestError 
-} from '../../shared/errors/app.error';
-import { 
-  User, 
-  CreateUserDto, 
-  UpdateUserDto, 
+import type {
+  User,
+  CreateUserDto,
+  UpdateUserDto,
   UserResponseDto,
-  UserFilters 
+  UserFilters,
 } from './user.types';
-import { PaginationQuery, PaginationMeta } from '../../shared/interfaces';
-import {logger} from '../../shared/utils';
+import { cacheService } from '../../infrastructure';
+import { NotFoundError, ConflictError, BadRequestError } from '../../shared/errors/app.error';
+import type { PaginationQuery, PaginationMeta } from '../../shared/interfaces';
+import { logger } from '../../shared/utils';
 
 export class UserService {
   constructor(
     private userRepository: UserRepository,
-    private cache = cacheService
+    private cache = cacheService,
   ) {}
 
   // Convertir User a UserResponseDto (sin datos sensibles)
@@ -40,7 +36,9 @@ export class UserService {
       const cacheKey = `users:list:${JSON.stringify(query)}`;
 
       // Intentar obtener del cache
-      const cached = await this.cache.get<{ users: UserResponseDto[]; meta: PaginationMeta }>(cacheKey);
+      const cached = await this.cache.get<{ users: UserResponseDto[]; meta: PaginationMeta }>(
+        cacheKey,
+      );
       if (cached) {
         logger.debug({ cacheKey }, 'Users fetched from cache');
         return cached;
@@ -53,7 +51,7 @@ export class UserService {
       ]);
 
       const result = {
-        users: users.map(user => this.toResponseDto(user)),
+        users: users.map((user) => this.toResponseDto(user)),
         meta: {
           page,
           limit,
@@ -72,7 +70,7 @@ export class UserService {
     }
   }
 
-  async getUserById(id: number | string): Promise<UserResponseDto> {
+  async getUserById(id: string): Promise<UserResponseDto> {
     try {
       const cacheKey = `user:${id}`;
 
@@ -127,7 +125,7 @@ export class UserService {
     }
   }
 
-  async updateUser(id: number | string, data: UpdateUserDto): Promise<UserResponseDto> {
+  async updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
     try {
       // Verificar que el usuario existe
       const existingUser = await this.userRepository.findById(id);
@@ -151,10 +149,7 @@ export class UserService {
       const updatedUser = await this.userRepository.update(id, data);
 
       // Invalidar caches
-      await Promise.all([
-        this.cache.del(`user:${id}`),
-        this.cache.delPattern('users:list:*'),
-      ]);
+      await Promise.all([this.cache.del(`user:${id}`), this.cache.delPattern('users:list:*')]);
 
       logger.info({ userId: id }, 'User updated');
 
@@ -165,7 +160,7 @@ export class UserService {
     }
   }
 
-  async deleteUser(id: number | string): Promise<void> {
+  async deleteUser(id: string): Promise<void> {
     try {
       // Verificar que el usuario existe
       const exists = await this.userRepository.exists(id);
@@ -176,10 +171,7 @@ export class UserService {
       await this.userRepository.delete(id);
 
       // Invalidar caches
-      await Promise.all([
-        this.cache.del(`user:${id}`),
-        this.cache.delPattern('users:list:*'),
-      ]);
+      await Promise.all([this.cache.del(`user:${id}`), this.cache.delPattern('users:list:*')]);
 
       logger.info({ userId: id }, 'User deleted');
     } catch (error) {

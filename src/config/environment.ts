@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
-import {z} from 'zod';
 import dotenv from 'dotenv';
+import type jwt from 'jsonwebtoken';
+import { z } from 'zod';
 
 dotenv.config();
 
@@ -18,14 +18,17 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('*'),
 
   JWT_SECRET: z.string().default('your_jwt_secret'),
-  JWT_EXPIRES_IN: z.string().default('1h'),
+  JWT_EXPIRES_IN: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_SECRET: z.string().default('refresh_secret'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  JWT_REFRESH_EXPIRES_IN: z.coerce.number().int().positive().default(604800),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
+
+  ADMIN_EMAIL: z.email(),
+  ADMIN_PASSWORD: z.string(),
 });
 
 function validateEnv() {
@@ -39,6 +42,7 @@ function validateEnv() {
       });
       process.exit(1);
     }
+    return;
   }
 }
 
@@ -86,8 +90,13 @@ export const config = {
   },
 
   cors: {
-    origin: env.CORS_ORIGINS.split(',').map(origin => origin.trim()),
+    origin: env.CORS_ORIGINS.split(',').map((origin) => origin.trim()),
     credentials: true,
+  },
+
+  admin: {
+    email: env.ADMIN_EMAIL,
+    password: env.ADMIN_PASSWORD,
   },
 } as const;
 

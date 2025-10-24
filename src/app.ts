@@ -1,18 +1,17 @@
 import cors from 'cors';
-import express, { Application } from 'express';
+import type { Application } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+
 import { config } from './config';
+import { isRedisConnected } from './config/redis';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { requestId, requestLogger } from './middlewares/logger.middleware';
-import {
-  basicRateLimiter,
-  createRedisRateLimiter,
-} from './middlewares/rateLimit.middleware';
+import { basicRateLimiter, createRedisRateLimiter } from './middlewares/rateLimit.middleware';
 import { auth } from './modules/auth';
 import { users } from './modules/users';
 import { health, welcome } from './routes';
-import { isRedisConnected } from './config/redis';
 
 // Crear aplicación Express
 export function createApp(): Application {
@@ -26,9 +25,7 @@ export function createApp(): Application {
 
   // Rate limiting global
   app.use(
-    config.env === 'production' && isRedisConnected()
-      ? createRedisRateLimiter()
-      : basicRateLimiter
+    config.env === 'production' && isRedisConnected() ? createRedisRateLimiter() : basicRateLimiter,
   );
 
   app.use(helmet());
